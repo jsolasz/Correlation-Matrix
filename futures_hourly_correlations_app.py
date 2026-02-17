@@ -7,8 +7,8 @@ import yfinance as yf
 st.set_page_config(page_title="Multi-Asset Correlations", layout="wide")
 
 ASSET_CLASSES = {
-    "Equities": ["ES=F", "YM=F", "NQ=F", "NKD=F", "^VIX"],
-    "Fixed Income": ["ZN=F", "ZB=F"],
+    "Equities": ["ES=F", "YM=F", "NQ=F", "NKD=F", "^GDAXI", "^STOXX50E", "^VIX"],
+    "Fixed Income": ["ZN=F", "ZB=F", "FGBL=F", "FGBM=F"],
     "Commodities": ["CL=F", "HO=F", "GC=F", "SI=F", "HG=F"],
     "Forex": [
         "EURUSD=X",
@@ -33,9 +33,13 @@ LABELS = {
     "YM=F": "Dow",
     "NQ=F": "Nasdaq 100",
     "NKD=F": "Nikkei 225",
+    "^GDAXI": "DAX Index",
+    "^STOXX50E": "EURO STOXX 50 Index",
     "^VIX": "VIX Index",
     "ZN=F": "10Y Note",
     "ZB=F": "30Y Bond",
+    "FGBL=F": "Euro-Bund",
+    "FGBM=F": "Euro-Bobl",
     "CL=F": "Crude Oil",
     "HO=F": "Heating Oil",
     "GC=F": "Gold",
@@ -144,17 +148,31 @@ def render_asset_tab(asset_name: str, class_symbols: list[str], close_px_all: pd
         aspect="auto",
         title=f"{asset_name} Correlation Matrix ({frequency}, {period})",
     )
-    fig.update_layout(coloraxis_colorbar_title="Corr")
+    labels = list(corr_display.columns)
+    n_labels = len(labels)
+    fig_height = max(500, 90 + (n_labels * 48))
+    fig.update_layout(
+        coloraxis_colorbar_title="Corr",
+        height=fig_height,
+        margin=dict(l=20, r=20, t=60, b=120),
+    )
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=labels,
+        ticktext=labels,
+        tickangle=45,
+        automargin=True,
+        tickfont=dict(size=11),
+    )
+    fig.update_yaxes(
+        tickmode="array",
+        tickvals=labels,
+        ticktext=labels,
+        automargin=True,
+        tickfont=dict(size=11),
+    )
 
-    left, right = st.columns([2, 1])
-    with left:
-        st.plotly_chart(fig, use_container_width=True, key=f"{tab_key}_matrix_chart")
-
-    with right:
-        st.subheader("Coverage")
-        coverage = valid_counts.sort_values(ascending=False).rename("valid_obs").to_frame()
-        coverage.index = coverage.index.map(lambda x: f"{LABELS.get(x, x)} ({x})")
-        st.dataframe(coverage)
+    st.plotly_chart(fig, use_container_width=True, key=f"{tab_key}_matrix_chart")
 
 
 st.title("Multi-Asset Correlation Matrix")
